@@ -4,19 +4,23 @@ Actually, it should be used only with non-ASCII delimiters. Doesn't keep payload
 
 Config:
 
-- field_delimiter (string, optional, default ',')
+- field_delimiter (string, optional, default ','):
+    Field delimiter.
 
-- field_names (string, optional, default nil)
-    Field names list, separated by 'field_delimiter' character. If missed, fild names will be as 'field_%field_number%'
+- field_names (string, optional, default nil):
+    Field names list, separated by 'field_delimiter' character. If missed, fild names will be as 'field_%field_number%'.
 
-- ts_field_number (number, optional, default nil)
+- ts_field_number (number, optional, default nil):
     Number of field with timestamp.
 
-- ts_format (string, optional, default nil)
+- ts_format (string, optional, default nil):
     Format of timestamp, see strftime() description. You must set both ts_field_number and ts_format parameters neither none of them.
 
-- tz (string, optional, defaults to UTC)
+- tz (string, optional, defaults to UTC):
     The conversion actually happens on the Go side since there isn't good TZ support here.
+
+- type (string, optional, default nil):
+    Sets the message 'Type' header to the specified value.
 
 *Example Heka Configuration*
 
@@ -78,6 +82,7 @@ Config:
 local string	= require "string"
 local dt	= require "date_time"
 local l		= require 'lpeg'
+l.locale(l)
 
 local field_delimiter	= read_config("field_delimiter")
 if not field_delimiter then field_delimiter = ',' end

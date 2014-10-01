@@ -3,7 +3,10 @@ Parses the Nginx error logs based on the Nginx hard coded internal format.
 
 Config:
 
-- tz (string, optional, defaults to UTC)
+- type (string, optional, default nil):
+    Sets the message 'Type' header to the specified value.
+
+- tz (string, optional, defaults to UTC):
     The conversion actually happens on the Go side since there isn't good TZ support here.
 
 *Example Heka Configuration 1*
@@ -21,6 +24,7 @@ Config:
     filename = "lua_decoders/ngs.nginx_error_log.lua"
 
     [NGSNginxErrorDecoder.config]
+    type = "nginx_error_logs"
     tz = "Asia/Novosibirsk"
 
 Nginx pass through non-printable characters to error log. For example: let URL is 'http://host/uri?var=%0Avalue' and it's rewrited and proxied to upstream. Nginx will write to error log '..., request: "GET /uri?var=%0Avalue HTTP/1.1", upstream: "/uri?var=
@@ -44,13 +48,13 @@ value"'. That is, line will be broken by 'line feed' character. It's proved up t
     filename = "lua_decoders/ngs.nginx_error_log.lua"
 
     [NGSNginxErrorDecoder.config]
+    type = "nginx_error_logs"
     tz = "Asia/Novosibirsk"
-
 
 *Example Heka Message*
 
 :Timestamp: 2014-09-24 17:19:56 +0700 NOVT
-:Type: nginx.error
+:Type: nginx_error_logs
 :Hostname: frontend6
 :Pid: 16842
 :UUID: a1ee8eb0-e60b-4b81-a143-5dfe9a64b75b
@@ -71,14 +75,16 @@ value"'. That is, line will be broken by 'line feed' character. It's proved up t
 --]]
 
 local dt	= require "date_time"
-local ip	= require "ip_address"
+--local ip	= require "ip_address"
 local l		= require 'lpeg'
-local clf	= require "common_log_format"
+--local clf	= require "common_log_format"
 l.locale(l)
+
+local msg_type	= read_config("type")
 
 local msg = {
 	Timestamp	= nil,
-	Type		= nil,
+	Type		= msg_type,
 	Severity	= nil,
 	Pid		= nil,
 	Hostname	= nil,
@@ -203,7 +209,6 @@ function process_message ()
 
 	-- other information is not parseable and used as payload
 	msg.Payload = log
-	msg.Type = "nginx.error"
 
 	inject_message(msg)
 	return 0
