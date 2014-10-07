@@ -75,9 +75,7 @@ value"'. That is, line will be broken by 'line feed' character. It's proved up t
 --]]
 
 local dt	= require "date_time"
---local ip	= require "ip_address"
 local l		= require 'lpeg'
---local clf	= require "common_log_format"
 l.locale(l)
 
 local msg_type	= read_config("type")
