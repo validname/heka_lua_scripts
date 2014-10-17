@@ -7,7 +7,7 @@ Config:
     Sets the message 'Type' header to the specified value.
 
 - tz (string, optional, defaults to UTC):
-    The conversion actually happens on the Go side since there isn't good TZ support here.
+    Timezone.
 
 *Example Heka Configuration 1*
 
@@ -73,12 +73,12 @@ local msg = {
 }
 
 local php_fpm_error_levels = l.Cg((
-  l.P("DEBUG")   / "7"
-+ l.P("NOTICE")  / "5"
-+ l.P("WARNING") / "4"
-+ l.P("ERROR")   / "3"
-+ l.P("ALERT")   / "1")
-/ tonumber, "level")
+	l.P("DEBUG")		/ "7"
+	+ l.P("NOTICE") 	/ "5"
+	+ l.P("WARNING")	/ "4"
+	+ l.P("ERROR")		/ "3"
+	+ l.P("ALERT")		/ "1")
+	/ tonumber, "level")
 local timestamp	= l.P("[") * l.Cg( dt.build_strftime_grammar("%d-%b-%Y %H:%M:%S") / dt.time_to_ns, "timestamp" ) * l.P("] ")
 local level	= php_fpm_error_levels * l.P(": ")
 local pool	= l.P("[pool ") * l.Cg((l.R("az") + l.R("AZ") + l.R("09") + l.S("-_ "))^1, "pool") * l.P("] ")

@@ -7,7 +7,7 @@ Config:
     Sets the message 'Type' header to the specified value.
 
 - tz (string, optional, defaults to UTC):
-    The conversion actually happens on the Go side since there isn't good TZ support here.
+    Timezone.
 
 *Example Heka Configuration*
 
@@ -90,20 +90,20 @@ local msg = {
 }
 
 local number = l.digit^1
-local seconds_float = number * l.P(".") * number
+local float = number * l.P(".") * number
 
 local ts_weekday = l.P"Mon" + "Tue" + "Wed" + "Thu" + "Fri" + "Sat" + "Sun"
 local timestamp = l.Cg( l.Ct( ts_weekday * l.P(" ") * dt.date_mabbr * l.P(" ") * dt.date_mday_sp * l.P(" ") * dt.rfc3339_partial_time * l.P(" ") * dt.date_fullyear ) / dt.time_to_ns, "timestamp" )
 
 local plain_match_mode = l.P("all") + l.P("any") + l.P("phr") + l.P("bool") + l.P("ext")*l.P("2")^-1 + l.P("scan")
 local plain_sort_mode = l.P("rel") + l.P("attr-") + l.P("attr+") + l.P("tsegs") + l.P("ext")
-local plain_query_header_times = l.Cg(seconds_float, "real-time" ) * l.P(" sec ") * ( l.Cg(seconds_float, "wall-time" ) * l.P(" sec ") )^-1 * ( l.P("x") * l.Cg(l.digit, "query_multiplier") * l.P(" ") )^-1 
-local plain_query_header_stats = l.P("[") * l.Cg(plain_match_mode, "match-mode") * l.P("/") * l.Cg(number, "filters-count") * l.P("/") * l.Cg(plain_sort_mode, "sort-mode") * l.P(" ") * l.Cg(number, "total-matches") * l.P(" (") * l.Cg(number, "offset") * l.P(",") * l.Cg(number, "limit") * l.P(")") * ( l.P(" @") * l.Cg((l.alpha+l.space+l.digit+l.S("-_,"))^1, "groupby-attr") )^-1 * l.P("]")
+local plain_query_header_times = l.Cg(float/tonumber, "real-time" ) * l.P(" sec ") * ( l.Cg(float/tonumber, "wall-time" ) * l.P(" sec ") )^-1 * ( l.P("x") * l.Cg(number/tonumber, "query_multiplier") * l.P(" ") )^-1 
+local plain_query_header_stats = l.P("[") * l.Cg(plain_match_mode, "match-mode") * l.P("/") * l.Cg(number/tonumber, "filters-count") * l.P("/") * l.Cg(plain_sort_mode, "sort-mode") * l.P(" ") * l.Cg(number/tonumber, "total-matches") * l.P(" (") * l.Cg(number/tonumber, "offset") * l.P(",") * l.Cg(number/tonumber, "limit") * l.P(")") * ( l.P(" @") * l.Cg((l.alpha+l.space+l.digit+l.S("-_,"))^1, "groupby-attr") )^-1 * l.P("]")
 local plain_query_header_indexes =  l.P(" [") * l.Cg((l.alpha+l.space+l.digit+l.S("-_,"))^1, "index-names") * l.P("]")
 local plain_query_header_io = ( l.P(" [") * l.Cg( (l.P(1)-(l.P("]")))^0 , "io_stats") * l.P("]") )^-1
 local plain_query_grammar = l.Ct( l.P("[") * timestamp * l.P("] ") * plain_query_header_times * plain_query_header_stats * plain_query_header_indexes * plain_query_header_io * l.P(" ")^-1 * l.Cg( (l.P(1)-l.P("\n"))^0, "query_plain" ) )
 
-local sql_query_header = l.P(" conn ") * l.Cg( l.digit^1, "connection_id") * (l.P(" real ") * l.Cg( seconds_float, "real-time"))^-1 * l.P(" wall ") * l.Cg( seconds_float, "wall-time") * l.P(" found ") * l.Cg( l.digit^1, "total-matches") * l.P(" ")
+local sql_query_header = l.P(" conn ") * l.Cg( number/tonumber, "connection_id") * (l.P(" real ") * l.Cg( float/tonumber, "real-time"))^-1 * l.P(" wall ") * l.Cg( float/tonumber, "wall-time") * l.P(" found ") * l.Cg( number/tonumber, "total-matches") * l.P(" ")
 local sql_query_footer_error = (l.P(" ") * (l.P("/*")+l.P("#")) * l.P(" error=") * l.Cg((l.P(1)-(l.P("\n")+l.P(" #")+l.P(" */")))^0, "query_error") * l.P(" */")^-1 )^-1
 local sql_query_footer_io = ( l.P(" ") * (l.P("/* ")+l.P("# ")) * l.Cg((l.P(1)-(l.P("\n")+l.P(" */")))^0, "io_stats") * l.P(" */")^-1 )^-1 * l.Cg( (l.P(1)-l.P("\n"))^0, "rest" )
 local sql_query_grammar = l.Ct( l.P("/* ") * timestamp * sql_query_header * l.P("*/ ") * l.Cg( (l.P(1)-l.P(";"))^0, "query_sql" ) * l.P(";") * sql_query_footer_error * sql_query_footer_io )
@@ -137,14 +137,15 @@ function process_message ()
 		msg.Timestamp = tmp.timestamp
 		msg.Payload = nil
 		msg.Fields['query_type'] = 'plain'
-		msg.Fields['real-time'] = tonumber(tmp['real-time'])
-		msg.Fields['wall-time'] = tonumber(tmp['wall-time'])
+		msg.Fields['real-time'] = tmp['real-time']
+		msg.Fields['wall-time'] = tmp['wall-time']
+		msg.Fields['query_multiplier'] = tmp['query_multiplier']
 		msg.Fields['match-mode'] = tmp['match-mode']
-		msg.Fields['filters-count'] = tonumber(tmp['filters-count'])
+		msg.Fields['filters-count'] = tmp['filters-count']
 		msg.Fields['sort-mode'] = tmp['sort-mode']
-		msg.Fields['total-matches'] = tonumber(tmp['total-matches'])
-		msg.Fields['offset'] = tonumber(tmp['offset'])
-		msg.Fields['limit'] = tonumber(tmp['limit'])
+		msg.Fields['total-matches'] = tmp['total-matches']
+		msg.Fields['offset'] = tmp['offset']
+		msg.Fields['limit'] = tmp['limit']
 		msg.Fields['groupby-attr'] = tmp['groupby-attr']
 		msg.Fields['index-names'] = tmp['index-names']
 		msg.Fields['io_stats'] = tmp['io_stats']
@@ -157,14 +158,13 @@ function process_message ()
 			msg.Timestamp = tmp.timestamp
 			msg.Payload = nil
 			msg.Fields['query_type'] = 'SphinxQL'
-			msg.Fields['real-time'] = tonumber(tmp['real-time'])
-			msg.Fields['wall-time'] = tonumber(tmp['wall-time'])
-			msg.Fields['total-matches'] = tonumber(tmp['total-matches'])
-			msg.Fields['connection_id'] = tonumber(tmp['connection_id'])
+			msg.Fields['real-time'] = tmp['real-time']
+			msg.Fields['wall-time'] = tmp['wall-time']
+			msg.Fields['total-matches'] = tmp['total-matches']
+			msg.Fields['connection_id'] = tmp['connection_id']
 			msg.Fields['query_sql'] = tmp['query_sql']
 			msg.Fields['query_error'] = tmp['query_error']
 			msg.Fields['io_stats'] = tmp['io_stats']
---			msg.Fields['rest'] = tmp['rest']
 			inject_message(msg)
 			return 0
 		else

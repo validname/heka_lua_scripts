@@ -1,6 +1,10 @@
 --[[
-Very simple CSV parser. Ignores quotes and hence, field delimiters and line endings in the fileds.
-Actually, it should be used only with non-ASCII delimiters. Doesn't keep payload. May parse timestamp from certain field (removes that field).
+Very simple CSV parser.
+Pros:
++ It can parse timestamp from certain field (and then removes that field).
+Cons:
+- It ignores quotes and hence, it ignores field delimiters and line endings in the fileds. (Actually, it should be used only with 'non-printable' delimiters (e.g.: '\t')).
+- It doesn't keep payload. 
 
 Config:
 
@@ -8,16 +12,16 @@ Config:
     Field delimiter.
 
 - field_names (string, optional, default nil):
-    Field names list, separated by 'field_delimiter' character. If missed, fild names will be as 'field_%field_number%'.
+    Field names list, separated by 'field_delimiter' character. If it's missed, fild names will be labeled as 'field_%field_number%'.
 
 - ts_field_number (number, optional, default nil):
     Number of field with timestamp.
 
 - ts_format (string, optional, default nil):
-    Format of timestamp, see strftime() description. You must set both ts_field_number and ts_format parameters neither none of them.
+    Format of timestamp, see strftime() description. You must set either both ts_field_number and ts_format parameters or none of them.
 
 - tz (string, optional, defaults to UTC):
-    The conversion actually happens on the Go side since there isn't good TZ support here.
+    Timezone.
 
 - type (string, optional, default nil):
     Sets the message 'Type' header to the specified value.

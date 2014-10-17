@@ -7,7 +7,7 @@ Config:
     Sets the message 'Type' header to the specified value.
 
 - tz (string, optional, defaults to UTC):
-    The conversion actually happens on the Go side since there isn't good TZ support here.
+    Timezone.
 
 *Example Heka Configuration*
 
@@ -63,12 +63,12 @@ local ts_weekday = l.P"Mon" + "Tue" + "Wed" + "Thu" + "Fri" + "Sat" + "Sun"
 local timestamp = l.Cg( l.Ct( ts_weekday * l.P(" ") * dt.date_mabbr * l.P(" ") * dt.date_mday_sp * l.P(" ") * dt.rfc3339_partial_time * l.P(" ") * dt.date_fullyear ) / dt.time_to_ns, "timestamp" )
 --local log_level = ( l.Cg(l.P + l.P + l.P("") + l.P), "log_level")
 local log_level = l.Cg((
-  l.P("DEBUG")   / "7"
-+ l.P("WARNING") / "4"
-+ l.P("FATAL")   / "0")
-/ tonumber, "log_level") * l.P(": ")
+	l.P("DEBUG")		/ "7"
+	+ l.P("WARNING")	/ "4"
+	+ l.P("FATAL")		/ "0")
+	/ tonumber, "log_level") * l.P(": ")
 
-local log_grammar = l.Ct( l.P("[") * timestamp *l.P("] [") * (l.P(" ")^1)^-1 * l.Cg(l.digit^1, "pid") * l.P("] ") * log_level^-1 * l.Cg( (l.P(1)-l.P("\n"))^0, "rest" ) )
+local log_grammar = l.Ct( l.P("[") * timestamp *l.P("] [") * (l.P(" ")^1)^-1 * l.Cg(l.digit^1 / tonumber, "pid") * l.P("] ") * log_level^-1 * l.Cg( (l.P(1)-l.P("\n"))^0, "rest" ) )
 
 function process_message ()
 	local log = read_message("Payload")
@@ -78,7 +78,7 @@ function process_message ()
 	tmp = log_grammar:match(log)
 	if tmp then
 		msg.Timestamp = tmp.timestamp
-		msg.Pid = tonumber(tmp.pid)
+		msg.Pid = tmp.pid
 		msg.Severity = tmp.log_level
 		msg.Payload = tmp.rest
 		inject_message(msg)

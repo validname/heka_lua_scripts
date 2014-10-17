@@ -7,7 +7,7 @@ Config:
     Sets the message 'Type' header to the specified value.
 
 - tz (string, optional, defaults to UTC):
-    The conversion actually happens on the Go side since there isn't good TZ support here.
+    Timezone.
 
 *Example Heka Configuration 1*
 
@@ -95,19 +95,18 @@ local unquoted_string	= l.P("\"") * l.C( (l.P(1)-l.S("\"\n"))^0)
 local timestamp		= l.Cg( dt.build_strftime_grammar("%Y/%m/%d %H:%M:%S") / dt.time_to_ns, "timestamp" )
 local ts_grammar	= l.Ct( timestamp * l.Cg( l.P(1)^0, "rest" ) )
 
--- stolen from heka's lua_modules/common_log_format.lua ^_^
-local nginx_error_levels = l.Cg((
-  l.P"debug"   / "7"
-+ l.P"info"    / "6"
-+ l.P"notice"  / "5"
-+ l.P"warn"    / "4"
-+ l.P"error"   / "3"
-+ l.P"crit"    / "2"
-+ l.P"alert"   / "1"
-+ l.P"emerg"   / "0")
-/ tonumber, "level")
+local error_levels = l.Cg((
+	l.P("debug")	/ "7"
+	+ l.P("info")	/ "6"
+	+ l.P("notice")	/ "5"
+	+ l.P("warn")	/ "4"
+	+ l.P("error")	/ "3"
+	+ l.P("crit")	/ "2"
+	+ l.P("alert")	/ "1"
+	+ l.P("emerg")	/ "0")
+	/ tonumber, "level")
 
-local header_grammar	= l.Ct( l.P(" [") * nginx_error_levels * l.P("] ") * l.Cg(l.digit^1, "pid") * l.P("#") * l.Cg(l.digit^1, "tid") * l.P(": *") * l.Cg(l.digit^1, "cid") * l.P(" ") * l.Cg( l.P(1)^0, "rest" ) )
+local header_grammar	= l.Ct( l.P(" [") * error_levels * l.P("] ") * l.Cg(l.digit^1, "pid") * l.P("#") * l.Cg(l.digit^1, "tid") * l.P(": *") * l.Cg(l.digit^1, "cid") * l.P(" ") * l.Cg( l.P(1)^0, "rest" ) )
 
 local client_prefix	= l.P(", client: ")
 local before_client	= l.Cg( (l.P(1)-client_prefix)^0, "begin" )
