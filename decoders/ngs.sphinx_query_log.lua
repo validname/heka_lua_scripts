@@ -132,6 +132,9 @@ function process_message ()
 	msg.Fields['query_sql'] = nil
 	msg.Fields['query_error'] = nil
 
+	-- save original UUID
+	msg.Fields["oiriginal_UUID"] = read_message("Uuid")
+
 	tmp = plain_query_grammar:match(log)
 	if tmp then
 		msg.Timestamp = tmp.timestamp

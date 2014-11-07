@@ -114,6 +114,9 @@ function process_message ()
 	-- other information is not parseable and used as payload
 	msg.Payload = log
 
+	-- save original UUID
+	msg.Fields["oiriginal_UUID"] = read_message("Uuid")
+
 	inject_message(msg)
 	return 0
 end

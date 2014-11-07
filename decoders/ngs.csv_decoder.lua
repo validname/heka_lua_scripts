@@ -180,6 +180,8 @@ function process_message ()
 		end
 		i = i + 1
 	end
+	-- save original UUID
+	msg.Fields["oiriginal_UUID"] = read_message("Uuid")
 	inject_message(msg)
 	return 0
 end

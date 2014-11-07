@@ -162,6 +162,9 @@ function process_message ()
 	end
 	msg.Fields.sql_query = nil
 
+	-- save original UUID
+	msg.Fields["oiriginal_UUID"] = read_message("Uuid")
+
 	inject_message(msg)
 	return 0
 end
