@@ -82,7 +82,7 @@ function process_message ()
 		msg.Severity = tmp.log_level
 		msg.Payload = tmp.rest
 		-- save original UUID
-		msg.Fields["oiriginal_UUID"] = read_message("Uuid")
+		msg.Fields["original_UUID"] = read_message("Uuid")
 		inject_message(msg)
 		return 0
 	else
